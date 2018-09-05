@@ -9,7 +9,8 @@ namespace UDPChat
     class Program
     {
         private static IPAddress remoteIPAddress;
-        private static int remotePort;
+        private static string senderIp;
+        private static int senderPort = -1;
         private static int localPort;
 
         [STAThread]
@@ -52,8 +53,7 @@ namespace UDPChat
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                return "127.0.0.1";
+                return "empty";
             }
         }
         
@@ -87,21 +87,43 @@ namespace UDPChat
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                return 60000;
+                return -2;
             }
         }
 
         private static void Sender()
         {
+            string substring = "";
             while (true)
             {
+                
                 string datagram = Console.ReadLine();
+                IPEndPoint endPoint = null;
                 
                 UdpClient sender = new UdpClient();
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(GetIpFromString(datagram)), 
-                                                    GetPortFromString(datagram));
-
+                if (senderPort == -1 || senderIp == null) {
+                    senderPort = GetPortFromString(datagram);
+                    senderIp = GetIpFromString(datagram);
+                    endPoint = new IPEndPoint(IPAddress.Parse(senderIp), senderPort);
+                    substring = $"{senderIp}:{senderPort}>";
+                }
+                else
+                {
+                    if (GetIpFromString(datagram) == "empty" || GetPortFromString(datagram) == -2)
+                    {
+                        string buf = datagram;
+                        datagram = substring + buf;
+                        endPoint = new IPEndPoint(IPAddress.Parse(senderIp), senderPort);
+                    }
+                    else
+                    {
+                        senderPort = GetPortFromString(datagram);
+                        senderIp = GetIpFromString(datagram);
+                        endPoint = new IPEndPoint(IPAddress.Parse(senderIp), senderPort);
+                        
+                    }
+                }
+                
                 try
                 {
                     
@@ -116,8 +138,12 @@ namespace UDPChat
                 {
                     sender.Close();
                 }
+
+                
             }
         }
+        
+        
 
         public static void Receiver()
         {
