@@ -52,25 +52,10 @@ namespace UDPChat
             {
                 for (int i = 0; i < message.Length; i++)
                 {
-                    if (message[0] == '>')
+                    if (message[i] == ':')
                     {
-                        if (message[i] == '|')
-                        {
-                            Console.WriteLine(message.Substring(5, i));
-                            return message.Substring(5, i);
-                        }
+                        return message.Substring(0, i);
                     }
-                    else
-                    {
-                        if (message[i] == ':')
-                        {
-                            return message.Substring(0, i);
-                        }
-                    }
-                    
-                    
-
-                   
                 }
                 
                 throw new ArgumentException("IP введен не правильно");
@@ -89,11 +74,6 @@ namespace UDPChat
                 int b = 0;
                 for (int i = 0; i < message.Length; i++)
                 {
-                    if (message[i] == '|')
-                    {
-                        a = 0;
-                        b = i;
-                    }
                     
                     if (message[i] == ':')
                     {
@@ -108,7 +88,6 @@ namespace UDPChat
                 
                 if (int.TryParse(message.Substring(a, b), out int port))
                 {
-                    Console.WriteLine(port);
                     return port;
                 }
                 else
@@ -166,7 +145,7 @@ namespace UDPChat
                 try
                 {
                     
-                    byte[] bytes = Encoding.UTF8.GetBytes(localPort + "|" + datagram);
+                    byte[] bytes = Encoding.UTF8.GetBytes(datagram);
                     sender.Send(bytes, bytes.Length, endPoint);
                 }
                 catch (Exception ex)
