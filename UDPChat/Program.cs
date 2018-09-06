@@ -141,6 +141,8 @@ namespace UDPChat
                     }
                     
                 }
+
+                datagram = datagram.Replace($"{senderPort}", $"{localPort}");
                 
                 try
                 {
