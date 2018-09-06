@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -6,12 +7,20 @@ using System.Threading;
 
 namespace UDPChat
 {
+
+    public class User
+    {
+        public int Port { get; set; }
+        public string IP { get; set; }
+    }
+
     class Program
     {
         private static IPAddress remoteIPAddress;
         private static string senderIp;
         private static int senderPort = -1;
         private static int localPort;
+        private static List<User> users = new List<User>();
 
         [STAThread]
         static void Main(string[] args)
@@ -43,10 +52,25 @@ namespace UDPChat
             {
                 for (int i = 0; i < message.Length; i++)
                 {
-                    if (message[i] == ':')
+                    if (message[0] == '>')
                     {
-                        return message.Substring(0, i);
+                        if (message[i] == '|')
+                        {
+                            Console.WriteLine(message.Substring(5, i));
+                            return message.Substring(5, i);
+                        }
                     }
+                    else
+                    {
+                        if (message[i] == ':')
+                        {
+                            return message.Substring(0, i);
+                        }
+                    }
+                    
+                    
+
+                   
                 }
                 
                 throw new ArgumentException("IP введен не правильно");
@@ -65,6 +89,12 @@ namespace UDPChat
                 int b = 0;
                 for (int i = 0; i < message.Length; i++)
                 {
+                    if (message[i] == '|')
+                    {
+                        a = 0;
+                        b = i;
+                    }
+                    
                     if (message[i] == ':')
                     {
                         a = i + 1;
@@ -78,6 +108,7 @@ namespace UDPChat
                 
                 if (int.TryParse(message.Substring(a, b), out int port))
                 {
+                    Console.WriteLine(port);
                     return port;
                 }
                 else
@@ -90,6 +121,7 @@ namespace UDPChat
                 return -2;
             }
         }
+        
 
         private static void Sender()
         {
@@ -101,14 +133,21 @@ namespace UDPChat
                 IPEndPoint endPoint = null;
                 
                 UdpClient sender = new UdpClient();
+                
+                    
+                if (datagram[0] == '>')
+                {
+                    senderPort = GetPortFromString(datagram);
+                    senderIp = GetIpFromString(datagram);
+                    endPoint = new IPEndPoint(IPAddress.Parse(senderIp), senderPort);
+                }
+                
                 if (senderPort == -1 || senderIp == null) {
                     senderPort = GetPortFromString(datagram);
                     senderIp = GetIpFromString(datagram);
                     endPoint = new IPEndPoint(IPAddress.Parse(senderIp), senderPort);
                     substring = $"{senderIp}:{senderPort}>";
-                }
-                else
-                {
+                } else {
                     if (GetIpFromString(datagram) == "empty" || GetPortFromString(datagram) == -2)
                     {
                         string buf = datagram;
@@ -120,14 +159,14 @@ namespace UDPChat
                         senderPort = GetPortFromString(datagram);
                         senderIp = GetIpFromString(datagram);
                         endPoint = new IPEndPoint(IPAddress.Parse(senderIp), senderPort);
-                        
                     }
+                    
                 }
                 
                 try
                 {
                     
-                    byte[] bytes = Encoding.UTF8.GetBytes(datagram);
+                    byte[] bytes = Encoding.UTF8.GetBytes(localPort + "|" + datagram);
                     sender.Send(bytes, bytes.Length, endPoint);
                 }
                 catch (Exception ex)
@@ -159,6 +198,9 @@ namespace UDPChat
                     byte[] receiveBytes = receivingUdpClient.Receive(ref RemoteIpEndPoint);
 
                     string returnData = Encoding.UTF8.GetString(receiveBytes);
+                    
+                    
+                    
                     Console.WriteLine(" >>> " + returnData);
                 }
             }
